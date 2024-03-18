@@ -18,5 +18,5 @@ def getDistance(latitude1, longitude1, latitude2, longitude2):
     if round(distance * 1.609344, 2) < 0.05:
         return 'Поздравляем, у вас получилось!'
     if round(distance * 1.609344, 2) < 1:
-        return f'{round(distance * 1.609344, 2) / 1000} м'
+        return f'{round(distance * 1.609344, 2) * 1000} м'
     return f'{round(distance * 1.609344, 2)} км'

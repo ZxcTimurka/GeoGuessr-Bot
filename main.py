@@ -47,7 +47,7 @@ def fgh_message(message):
         bot.send_message(message.chat.id, 'Cначала нажми кнопку /start')
         return
     markup = InlineKeyboardMarkup()
-    markup.add(InlineKeyboardButton('Верунться назад', callback_data='back'),
+    markup.add(InlineKeyboardButton('Играть заново', callback_data='play'),
                InlineKeyboardButton('Рейтинг', callback_data='rate'))
     msg = tuple([message.location.latitude, message.location.longitude])
     name = tuple([float(i) for i in photo.name.replace('images/', '').replace('.jpeg', '').split(', ')])

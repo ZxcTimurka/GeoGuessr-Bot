@@ -1,24 +1,22 @@
 import telebot
-
-import aiohttp
 from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
 from telebot.async_telebot import AsyncTeleBot
 import asyncio
-
 from check_coords import check
 from config import TOKEN
 from get_distance import getDistance
 from get_image import getImages, getImage
-
+from online_db import add_player, print_curr_img, update_curr_img
 
 token = TOKEN
 bot = AsyncTeleBot(token)
-photo = ''
 
 
 @bot.message_handler(commands=['start'])
 async def start_message(message):
-    text = 'Привет!'
+    name = message.from_user.first_name
+    add_player(message.chat.id, name, 0, 0, 0)
+    text = f'Привет, {name}!'
     markup = InlineKeyboardMarkup()
     markup.row(InlineKeyboardButton('Играть', callback_data='play'),
                InlineKeyboardButton('Рейтинг', callback_data='rate'))
@@ -28,31 +26,33 @@ async def start_message(message):
 
 @bot.callback_query_handler(func=lambda call: True)
 async def callback_query(call):
-    if call.data == "back":
-        await game_mods(call.message)
-        await bot.delete_message(call.message.chat.id, call.message.message_id)
-    elif call.data == 'play':
-        await game_mods(call.message)
-        await bot.delete_message(call.message.chat.id, call.message.message_id)
-    elif call.data == 'classic_mode':
+    if call.data == 'classic_mode':
         await game_message(call.message)
-        print(call.message)
         if call.message.content_type != 'photo':
             await bot.delete_message(call.message.chat.id, call.message.message_id)
+    elif call.data == "back":
+        await game_mods(call.message, call.data)
+        await bot.delete_message(call.message.chat.id, call.message.message_id)
+    elif call.data == 'play':
+        await game_mods(call.message, call.data)
+        await bot.delete_message(call.message.chat.id, call.message.message_id)
 
 
 @bot.message_handler(content_types=['location'])
 async def fgh_message(message):
-    global photo
-    if not photo:
+    print(print_curr_img(message.chat.id)[0])
+    if not print_curr_img(message.chat.id)[0]:
         await bot.send_message(message.chat.id, 'Cначала нажми кнопку /start')
         return
     markup = InlineKeyboardMarkup()
     markup.add(InlineKeyboardButton('Назад', callback_data='play'),
                InlineKeyboardButton('Продолжить', callback_data='classic_mode'))
     msg = tuple([message.location.latitude, message.location.longitude])
-    name = tuple([float(i) for i in photo.name.replace('images/', '').replace('.jpeg', '').split(', ')])
+    name = tuple([float(i) for i in
+                  ''.join(print_curr_img(message.chat.id)).replace('images/', '').replace('.jpeg', '').split(
+                      ', ')])
     await bot.send_photo(message.chat.id, check(name, msg), caption=getDistance(*name, *msg), reply_markup=markup)
+    update_curr_img(message.chat.id, None)
 
 
 @bot.message_handler(content_types=['text'])
@@ -66,14 +66,14 @@ async def asd_message(message):
 
 
 async def game_message(message):
-    global photo
     photo = getImage()
+    update_curr_img(message.chat.id, photo.name)
     markup = InlineKeyboardMarkup()
     markup.add(InlineKeyboardButton('Верунться назад', callback_data='back'))
     await bot.send_photo(message.chat.id, photo, caption='Отправь мне координаты этого места', reply_markup=markup)
 
 
-async def game_mods(message):
+async def game_mods(message, id):
     text = 'Отлично! Выбери режим игры😉'
     markup = InlineKeyboardMarkup()
     markup.row(InlineKeyboardButton('Обычный', callback_data='classic_mode'),
@@ -81,7 +81,6 @@ async def game_mods(message):
                InlineKeyboardButton('Онлайн', callback_data='online_mode'))
     markup.row(InlineKeyboardButton('Описание режимов', callback_data='des_game_mode'))
     await bot.send_message(message.chat.id, text, reply_markup=markup)
-
 
 
 asyncio.run(bot.polling())

@@ -7,6 +7,7 @@ from config import TOKEN
 from get_distance import getDistance
 from get_image import getImages, getImage
 from online_db import add_player, print_curr_img, update_curr_img
+from db import search_by_coords
 
 token = TOKEN
 bot = AsyncTeleBot(token)
@@ -51,7 +52,7 @@ async def fgh_message(message):
     name = tuple([float(i) for i in
                   ''.join(print_curr_img(message.chat.id)).replace('images/', '').replace('.jpeg', '').split(
                       ', ')])
-    await bot.send_photo(message.chat.id, check(name, msg), caption=getDistance(*name, *msg), reply_markup=markup)
+    await bot.send_photo(message.chat.id, check(name, msg), caption=f'{getDistance(*name, *msg)} - {search_by_coords(*name)[0]}', reply_markup=markup)
     update_curr_img(message.chat.id, None)
 
 

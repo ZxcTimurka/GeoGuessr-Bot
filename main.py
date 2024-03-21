@@ -7,7 +7,6 @@ from datetime import time
 import aioschedule as schedule
 import time
 
-
 from check_coords import check
 from config import TOKEN
 from get_distance import getDistance
@@ -102,7 +101,7 @@ async def classic_mode(message):
     await bot.send_photo(message.chat.id, photo, caption='Отправь мне координаты этого места', reply_markup=markup)
 
 
-
+#здесь не работает
 async def time_mod(message):
     photo = getImage()
     update_curr_img(message.chat.id, photo.name)

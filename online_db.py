@@ -84,7 +84,7 @@ def print_curr_img(id):
     for elem in result:
         return elem
 
-
+#для режима на время
 def print_time_bool(id):
     con = sqlite3.connect("players.db")
     cur = con.cursor()

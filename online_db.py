@@ -12,7 +12,8 @@ def create_table():
                         time INTEGER,
                         score INTEGER,
                         image_id INTEGER,
-                        curr_img TEXT
+                        curr_img TEXT,
+                        time_bool TEXT
                     )
                 ''')
 
@@ -39,8 +40,8 @@ def add_player(id, name, time, score, image_id):
                     with con:
                         cursor = con.cursor()
                         cursor.execute('''
-                            INSERT INTO players(id, name, time, score, image_id, curr_img) VALUES(?, ?, ?, ?, ?, ?)
-                        ''', (id, name, time, score, image_id, None))
+                            INSERT INTO players(id, name, time, score, image_id, curr_img, time_bool) VALUES(?, ?, ?, ?, ?, ?, ?)
+                        ''', (id, name, time, score, image_id, None, False))
                         con.commit()
                 else:
                     with con:
@@ -82,6 +83,23 @@ def print_curr_img(id):
     result = cur.execute(f"""SELECT curr_img FROM players WHERE id = {id}""").fetchall()
     for elem in result:
         return elem
+
+
+def print_time_bool(id):
+    con = sqlite3.connect("players.db")
+    cur = con.cursor()
+    result = cur.execute(f"""SELECT time_bool FROM players WHERE id = {id}""").fetchall()
+    for elem in result:
+        return elem
+
+
+def update_time_bool(id, bool):
+    con = sqlite3.connect('players.db')
+    with con:
+        cursor = con.cursor()
+        print(id, bool)
+        cursor.execute(f"""update players set time_bool = '{bool}' where id = {id}""")
+        con.commit()
 
 
 create_table()

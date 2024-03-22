@@ -13,7 +13,8 @@ def create_table():
                         score INTEGER,
                         image_id INTEGER,
                         curr_img TEXT,
-                        time_bool TEXT
+                        time_bool TEXT,
+                        in_searching INTEGER
                     )
                 ''')
 
@@ -101,5 +102,21 @@ def update_time_bool(id, bool):
         cursor.execute(f"""update players set time_bool = '{bool}' where id = {id}""")
         con.commit()
 
+
+def change_search(id):
+    con = sqlite3.connect('players.db')
+    with con:
+        cursor = con.cursor()
+        result = cursor.execute(f"""SELECT in_searching FROM players WHERE id = {id}""").fetchall()[0]
+        cursor.execute(f"""update players set in_searching = 0 where id = {id}""" if result else f"""update players set in_searching = 1 where id = {id}""")
+        con.commit()
+
+
+def print_ready():
+    con = sqlite3.connect("players.db")
+    cur = con.cursor()
+    result = cur.execute("""SELECT id FROM players WHERE in_searching = 1""").fetchall()
+    for elem in result:
+        return elem
 
 create_table()

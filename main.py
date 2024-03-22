@@ -1,3 +1,5 @@
+import time
+
 import telebot
 from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
 from telebot.async_telebot import AsyncTeleBot
@@ -9,6 +11,7 @@ from get_distance import getDistance
 from get_image import getImages, getImage
 from online_db import add_player, print_curr_img, update_curr_img, update_time_bool, print_time_bool
 from db import search_by_coords
+import threading
 
 token = TOKEN
 bot = AsyncTeleBot(token)
@@ -27,7 +30,7 @@ async def start_message(message):
     await bot.send_message(message.chat.id, text, reply_markup=markup)
 
 
-@bot.callback_query_handler(func=lambda call:True)
+@bot.callback_query_handler(func=lambda call: True)
 async def callback_query(call):
     if call.data == "back":
         await game_mods(call.message)
@@ -45,7 +48,7 @@ async def callback_query(call):
         markup.row(InlineKeyboardButton('Продолжить', callback_data='start_time_mod'))
         await bot.send_message(call.message.chat.id, text, reply_markup=markup, parse_mode="Markdown")
     if call.data == 'start_time_mod':
-        await time_mod(call.message)
+        await timer(call.message)
         if call.message.content_type != 'photo':
             await bot.delete_message(call.message.chat.id, call.message.message_id)
 
@@ -106,7 +109,6 @@ async def classic_mode(message):
 
 # здесь не работает
 async def time_mod(message):
-
     photo = getImage()
     update_curr_img(message.chat.id, photo.name)
     markup = InlineKeyboardMarkup()
@@ -115,6 +117,12 @@ async def time_mod(message):
     markup_lose.add(InlineKeyboardButton('Начать заново', callback_data='time_mode'),
                     InlineKeyboardButton('Выбрать режим', callback_data='play'))
     await bot.send_photo(message.chat.id, photo, caption='Отправь мне координаты этого места!!!', reply_markup=markup)
+
+
+async def timer(message):
+    await time_mod(message)
+    await asyncio.sleep(20)
+    await bot.send_message(message.chat.id, 'ты лох')
 
 
 asyncio.run(bot.polling())

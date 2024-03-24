@@ -14,7 +14,8 @@ def create_table():
                         image_id INTEGER,
                         curr_img TEXT,
                         time_bool TEXT,
-                        in_searching INTEGER
+                        in_searching INTEGER,
+                        pair TEXT
                     )
                 ''')
 
@@ -85,7 +86,8 @@ def print_curr_img(id):
     for elem in result:
         return elem
 
-#для режима на время
+
+# для режима на время
 def print_time_bool(id):
     con = sqlite3.connect("players.db")
     cur = con.cursor()
@@ -103,12 +105,12 @@ def update_time_bool(id, bool):
         con.commit()
 
 
-def change_search(id):
+def update_search(id, bool):
     con = sqlite3.connect('players.db')
     with con:
         cursor = con.cursor()
-        result = cursor.execute(f"""SELECT in_searching FROM players WHERE id = {id}""").fetchall()[0]
-        cursor.execute(f"""update players set in_searching = 0 where id = {id}""" if result else f"""update players set in_searching = 1 where id = {id}""")
+        print(id, bool)
+        cursor.execute(f"""update players set in_searching = '{bool}' where id = {id}""")
         con.commit()
 
 
@@ -118,5 +120,24 @@ def print_ready():
     result = cur.execute("""SELECT id FROM players WHERE in_searching = 1""").fetchall()
     for elem in result:
         return elem
+
+
+def print_pair(id):
+    con = sqlite3.connect("players.db")
+    cur = con.cursor()
+    result = cur.execute(f"""SELECT pair FROM players WHERE id = {id}""").fetchall()
+    for elem in result:
+        return elem
+
+
+def update_pair(id, id1):
+    con = sqlite3.connect('players.db')
+    with con:
+        cursor = con.cursor()
+        print(id, id1)
+        cursor.execute(f"""update players set pair = '{id}' where id = {id1}""")
+        cursor.execute(f"""update players set pair = '{id1}' where id = {id}""")
+        con.commit()
+
 
 create_table()

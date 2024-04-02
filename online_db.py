@@ -110,16 +110,15 @@ def update_search(id, bool):
     with con:
         cursor = con.cursor()
         print(id, bool)
-        cursor.execute(f"""update players set in_searching = '{bool}' where id = {id}""")
+        cursor.execute(f"""update players set in_searching = {bool} where id = {id}""")
         con.commit()
 
 
 def print_ready():
     con = sqlite3.connect("players.db")
     cur = con.cursor()
-    result = cur.execute("""SELECT id FROM players WHERE in_searching = 1""").fetchall()
-    for elem in result:
-        return elem
+    result = [i[0] for i in cur.execute("""SELECT id FROM players WHERE in_searching = 1""").fetchall()][::-1]
+    return result
 
 
 def print_pair(id):

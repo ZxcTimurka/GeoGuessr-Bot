@@ -13,7 +13,7 @@ def create_table():
                         score INTEGER,
                         image_id INTEGER,
                         curr_img TEXT,
-                        time_bool TEXT,
+                        time_bool INTEGER,
                         in_searching INTEGER,
                         pair TEXT
                     )
@@ -94,13 +94,12 @@ def print_curr_img(id):
         return elem
 
 
-# для режима на время
 def print_time_bool(id):
     con = sqlite3.connect("players.db")
     cur = con.cursor()
     result = cur.execute(f"""SELECT time_bool FROM players WHERE id = {id}""").fetchall()
     for elem in result:
-        return elem
+        return elem[0]
 
 
 def update_time_bool(id, bool):

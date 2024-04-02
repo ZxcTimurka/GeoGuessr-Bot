@@ -17,6 +17,7 @@ if __name__ == '__main__':
     @bot.message_handler(commands=['start'])
     async def start_message(message):
         name = message.from_user.first_name
+
         add_player(message.chat.id, name)
         text = f'Привет, {name}!'
         markup = InlineKeyboardMarkup()
@@ -57,7 +58,9 @@ if __name__ == '__main__':
             search = asyncio.create_task(online_search(call.message))
             await asyncio.gather(search)
         elif call.data == 'rate':
-            print(print_rating())
+            players = print_rating()
+            text = '\n'.join([f'{i[0]}. {i[1][0]} баллов - {i[1][1]}' for i in enumerate(players, len(players))])
+            await bot.send_message(call.message.chat.id, text)
         elif call.data == 'add':
             pass
 

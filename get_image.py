@@ -14,7 +14,7 @@ def get_coords():
 
 
 def getImage():
-    return f'images/{coord}.jpeg', 'rb'
+    return f'images/{coord}.jpeg'
 
 
 def getImages(count):

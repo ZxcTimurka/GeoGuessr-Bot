@@ -13,7 +13,7 @@ def create_table():
                         score INTEGER,
                         image_id INTEGER,
                         curr_img TEXT,
-                        time_bool TEXT,
+                        time_bool INTEGER,
                         in_searching INTEGER,
                         pair TEXT
                     )
@@ -29,7 +29,7 @@ def update_curr_img(id, img):
         con.commit()
 
 
-def add_player(id, name, time, score, image_id):
+def add_player(id, name):
     con = sqlite3.connect("players.db")
     cur = con.cursor()
     result = cur.execute(f'''select * from players where id = {id}''').fetchall()
@@ -43,14 +43,14 @@ def add_player(id, name, time, score, image_id):
                         cursor = con.cursor()
                         cursor.execute('''
                             INSERT INTO players(id, name, time, score, image_id, curr_img, time_bool) VALUES(?, ?, ?, ?, ?, ?, ?)
-                        ''', (id, name, time, score, image_id, None, False))
+                        ''', (id, name, 0, 0, 0, None, False))
                         con.commit()
                 else:
                     with con:
                         cursor = con.cursor()
                         cursor.execute('''
                               INSERT INTO players(id, name, time, score, image_id, curr_img) VALUES(?, ?, ?, ?, ?, ?)
-                         ''', (id, name, time, score, image_id, None))
+                         ''', (id, name, 0, 0, 0, None))
                         con.commit()
 
 
@@ -62,12 +62,19 @@ def print_time(id, image_id):
         return elem
 
 
-def print_score(id, image_id):
+def print_score(id):
     con = sqlite3.connect("players.db")
     cur = con.cursor()
-    result = cur.execute("""SELECT score FROM players WHERE id = ? and image_id = ?""", (id, image_id)).fetchall()
-    for elem in result:
-        return elem
+    result = cur.execute(f"""SELECT score FROM players WHERE id = {id}""").fetchall()
+    return result
+
+
+def update_score(id, score):
+    con = sqlite3.connect('players.db')
+    with con:
+        cursor = con.cursor()
+        cursor.execute(f"""update players set score = score + {score} where id = {id}""")
+        con.commit()
 
 
 def print_imageid(id, time, score):
@@ -87,13 +94,12 @@ def print_curr_img(id):
         return elem
 
 
-# для режима на время
 def print_time_bool(id):
     con = sqlite3.connect("players.db")
     cur = con.cursor()
     result = cur.execute(f"""SELECT time_bool FROM players WHERE id = {id}""").fetchall()
     for elem in result:
-        return elem
+        return elem[0]
 
 
 def update_time_bool(id, bool):
@@ -137,6 +143,13 @@ def update_pair(id, id1):
         cursor.execute(f"""update players set pair = '{id}' where id = {id1}""")
         cursor.execute(f"""update players set pair = '{id1}' where id = {id}""")
         con.commit()
+
+
+def print_rating():
+    con = sqlite3.connect("players.db")
+    cur = con.cursor()
+    result = cur.execute(f"""SELECT score, name FROM players""").fetchall()
+    return sorted(result, key=lambda x: x[0])
 
 
 create_table()

@@ -148,9 +148,21 @@ if __name__ == '__main__':
                     update_search(message.chat.id, 0)
                     await bot.send_message(message.chat.id, f'Я нашел игрока! {i}')
                     await bot.send_message(i, f'Я нашел игрока!{message.chat.id}')
-                    return
+                    await online_mode(message, i)
         if message.chat.id in print_ready():
             await bot.send_message(message.chat.id, 'Я никого не нашел😭😭😭')
             update_search(message.chat.id, 0)
+
+
+    async def online_mode(message, id_enemy):
+        photo = getImage()
+        update_curr_img(message.chat.id, photo.replace('.jpeg', '').replace('images/', ''))
+        update_curr_img(id_enemy, photo.replace('.jpeg', '').replace('images/', ''))
+        print(print_curr_img(message.chat.id))
+        markup = InlineKeyboardMarkup()
+        markup.add(InlineKeyboardButton('Вернуться назад', callback_data='play'))
+        await bot.send_photo(id_enemy, open(photo, 'rb'), caption='Отправь мне координаты этого места', reply_markup=markup)
+        await bot.send_photo(message.chat.id, open(photo, 'rb'), caption='Отправь мне координаты этого места', reply_markup=markup)
+
 
 asyncio.run(bot.polling())

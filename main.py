@@ -76,16 +76,19 @@ if __name__ == '__main__':
         msg = tuple([message.location.latitude, message.location.longitude])
         name = tuple([float(i) for i in ''.join(print_curr_img(message.chat.id))
                      .replace('images/', '').replace('.jpeg', '').split(', ')])
-        answer = list(getDistance(*name, *msg))
-        if print_time_bool(message.chat.id):
-            if answer[0] == 0:
-                answer[0] = -5
-            answer[0] *= 2
+        score, answer = list(getDistance(*name, *msg))
+        time_bool = print_time_bool(message.chat.id)
+        print(time_bool, 1488)
+        if time_bool == '1':
+            print(81734823794, score)
+            if score == 0:
+                score = -5
+            score *= 2
         await bot.send_photo(message.chat.id, check(name, msg),
-                             caption=f'Ты получил баллов: {answer[0]}. \n{answer[1]} - {search_by_coords(*name)[0]}',
+                             caption=f'Ты получил баллов: {score}. \n{answer} - {search_by_coords(*name)[0]}',
                              reply_markup=markup)
 
-        update_score(message.chat.id, answer[0])
+        update_score(message.chat.id, score)
         update_curr_img(message.chat.id, None)
 
 

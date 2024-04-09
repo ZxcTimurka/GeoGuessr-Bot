@@ -43,3 +43,16 @@ def search_by_coords(coords0, coords1):
     result = cur.execute("""select name from images where coord_lat = ? and coord_long = ?""", (coords0, coords1)).fetchall()
     for elem in result:
         return elem
+
+
+def return_coords(id):
+    con = sqlite3.connect('images.db')
+    cur = con.cursor()
+    result = cur.execute(f"""select coord_lat, coord_long from images where id = {id}""").fetchall()
+    for elem in result:
+        return elem
+
+
+def return_image(id):
+    file = f'images/{id}.jpeg'
+    return open(file, 'rb')

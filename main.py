@@ -8,7 +8,7 @@ from get_distance import getDistance
 from get_image import getImages, getImage
 from online_db import (add_player, print_curr_img, update_curr_img, update_time_bool, print_time_bool,
                        print_ready, update_search, update_pair, print_pair, print_score, update_score, print_rating)
-from db import search_by_coords
+from db import search_by_coords, return_coords, return_image
 
 token = TOKEN
 bot = AsyncTeleBot(token)
@@ -74,9 +74,8 @@ if __name__ == '__main__':
         markup.add(InlineKeyboardButton('Назад', callback_data='play'),
                    InlineKeyboardButton('Продолжить', callback_data='classic_mode'))
         msg = tuple([message.location.latitude, message.location.longitude])
-        print(msg)
-        name = tuple([float(i) for i in ''.join(print_curr_img(message.chat.id))
-                     .replace('images/', '').replace('.jpeg', '').split(', ')])
+        name = [return_coords(i for i in ''.join(print_curr_img(message.chat.id))
+                     .replace('images/', '').replace('.jpeg', ''))]
         print(name)
         answer = list(getDistance(*name, *msg))
         if print_time_bool(message.chat.id):
@@ -112,7 +111,7 @@ if __name__ == '__main__':
 
 
     async def classic_mode(message):
-        photo = getImage()
+        photo = return_image(getImage())
         update_curr_img(message.chat.id, photo.name)
         print(print_curr_img(message.chat.id))
         markup = InlineKeyboardMarkup()

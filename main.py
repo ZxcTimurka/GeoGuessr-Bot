@@ -74,8 +74,10 @@ if __name__ == '__main__':
         markup.add(InlineKeyboardButton('Назад', callback_data='play'),
                    InlineKeyboardButton('Продолжить', callback_data='classic_mode'))
         msg = tuple([message.location.latitude, message.location.longitude])
+        print(msg)
         name = tuple([float(i) for i in ''.join(print_curr_img(message.chat.id))
                      .replace('images/', '').replace('.jpeg', '').split(', ')])
+        print(name)
         answer = list(getDistance(*name, *msg))
         if print_time_bool(message.chat.id):
             if answer[0] == 0:

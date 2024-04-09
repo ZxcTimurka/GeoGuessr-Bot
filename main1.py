@@ -1,5 +1,6 @@
 import time
 
+from random import randint
 import telebot
 from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
 from telebot.async_telebot import AsyncTeleBot
@@ -10,7 +11,7 @@ from config import TOKEN
 from get_distance import getDistance
 from get_image import getImages, getImage
 from online_db import (add_player, print_curr_img, update_curr_img, update_time_bool, print_time_bool,
-                       print_ready, update_search, update_pair, print_pair, print_name, clear_pair)
+                       print_ready, update_search, update_pair, print_pair)
 from db import search_by_coords
 import threading
 
@@ -137,17 +138,20 @@ if __name__ == '__main__':
 
 
     async def online_search(message):
-        for i in range(90):
-            await asyncio.sleep(0.25)
-            if print_ready() and print_ready()[0] != message.chat.id:
-                print(message.chat.id, print_ready())
-                update_pair(message.chat.id, print_ready()[0])
-                update_search(print_ready()[0], 0)
-                update_search(message.chat.id, 0)
-                await bot.send_message(message.chat.id, f'Я нашел игрока! Его зовут {print_name(print_ready()[0])[0]}!')
-                await bot.send_message(print_ready()[0], f'Я нашел игрока! Его зовут {print_name(message.chat.id)[0]}!')
-                return
-        await bot.send_message(message.chat.id, 'Я никого не нашел😭😭😭')
+        await asyncio.sleep(5 + len(print_ready() * 2))
+        if message.chat.id in print_ready():
+            for i in print_ready():
+                if i != message.chat.id:
+                    print(message.chat.id, print_ready(), i)
+                    update_pair(message.chat.id, i)
+                    update_search(print_ready()[0], 0)
+                    update_search(message.chat.id, 0)
+                    await bot.send_message(message.chat.id, f'Я нашел игрока! {i}')
+                    await bot.send_message(i, f'Я нашел игрока!{message.chat.id}')
+                    return
+        if message.chat.id in print_ready():
+            await bot.send_message(message.chat.id, 'Я никого не нашел😭😭😭')
+            update_search(message.chat.id, 0)
 
 
 

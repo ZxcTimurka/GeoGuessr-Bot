@@ -8,7 +8,7 @@ from get_distance import getDistance
 from get_image import getImages, getImage
 from online_db import (add_player, print_curr_img, update_curr_img, update_time_bool, print_time_bool,
                        print_ready, update_search, update_pair, print_pair, print_score, update_score, print_rating)
-from db import search_by_coords
+from db import search_by_coords, return_coords, return_image
 
 token = TOKEN
 bot = AsyncTeleBot(token)
@@ -74,21 +74,19 @@ if __name__ == '__main__':
         markup.add(InlineKeyboardButton('Назад', callback_data='play'),
                    InlineKeyboardButton('Продолжить', callback_data='classic_mode'))
         msg = tuple([message.location.latitude, message.location.longitude])
-        name = tuple([float(i) for i in ''.join(print_curr_img(message.chat.id))
-                     .replace('images/', '').replace('.jpeg', '').split(', ')])
-        score, answer = list(getDistance(*name, *msg))
-        time_bool = print_time_bool(message.chat.id)
-        print(time_bool, 1488)
-        if time_bool == '1':
-            print(81734823794, score)
-            if score == 0:
-                score = -5
-            score *= 2
+        name = [return_coords(i for i in ''.join(print_curr_img(message.chat.id))
+                     .replace('images/', '').replace('.jpeg', ''))]
+        print(name)
+        answer = list(getDistance(*name, *msg))
+        if print_time_bool(message.chat.id):
+            if answer[0] == 0:
+                answer[0] = -5
+            answer[0] *= 2
         await bot.send_photo(message.chat.id, check(name, msg),
-                             caption=f'Ты получил баллов: {score}. \n{answer} - {search_by_coords(*name)[0]}',
+                             caption=f'Ты получил баллов: {answer[0]}. \n{answer[1]} - {search_by_coords(*name)[0]}',
                              reply_markup=markup)
 
-        update_score(message.chat.id, score)
+        update_score(message.chat.id, answer[0])
         update_curr_img(message.chat.id, None)
 
 
@@ -113,7 +111,7 @@ if __name__ == '__main__':
 
 
     async def classic_mode(message):
-        photo = getImage()
+        photo = return_image(getImage())
         update_curr_img(message.chat.id, photo.name)
         print(print_curr_img(message.chat.id))
         markup = InlineKeyboardMarkup()
@@ -151,9 +149,21 @@ if __name__ == '__main__':
                     update_search(message.chat.id, 0)
                     await bot.send_message(message.chat.id, f'Я нашел игрока! {i}')
                     await bot.send_message(i, f'Я нашел игрока!{message.chat.id}')
-                    return
+                    await online_mode(message, i)
         if message.chat.id in print_ready():
             await bot.send_message(message.chat.id, 'Я никого не нашел😭😭😭')
             update_search(message.chat.id, 0)
+
+
+    async def online_mode(message, id_enemy):
+        photo = getImage()
+        update_curr_img(message.chat.id, photo.replace('.jpeg', '').replace('images/', ''))
+        update_curr_img(id_enemy, photo.replace('.jpeg', '').replace('images/', ''))
+        print(print_curr_img(message.chat.id))
+        markup = InlineKeyboardMarkup()
+        markup.add(InlineKeyboardButton('Вернуться назад', callback_data='play'))
+        await bot.send_photo(id_enemy, open(photo, 'rb'), caption='Отправь мне координаты этого места', reply_markup=markup)
+        await bot.send_photo(message.chat.id, open(photo, 'rb'), caption='Отправь мне координаты этого места', reply_markup=markup)
+
 
 asyncio.run(bot.polling())

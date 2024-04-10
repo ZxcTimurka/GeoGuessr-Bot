@@ -1,5 +1,5 @@
 import asyncio
-
+import os
 import telebot
 from telebot.async_telebot import AsyncTeleBot
 from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
@@ -10,7 +10,9 @@ from db import search_by_coords, search_by_id
 from get_distance import getDistance
 from get_image import getImages, getImage
 from online_db import (add_player, print_curr_img, update_curr_img, update_time_bool, print_time_bool,
-                       print_ready, update_search, update_pair, update_score, print_rating)
+                       print_ready, update_search, update_pair, update_score, print_rating, update_suggest_stage,
+                       print_suggest_stage)
+from suggested_db import add_suggested_score, add_photo_name, print_id
 
 token = TOKEN
 bot = AsyncTeleBot(token)
@@ -65,7 +67,9 @@ if __name__ == '__main__':
             text = '\n'.join(sorted([f'{i + 1}. {j[0]} баллов - {j[1]}' for i, j in enumerate(players)]))
             await bot.send_message(call.message.chat.id, text)
         elif call.data == 'add':
-            pass
+            update_suggest_stage(call.message.chat.id, 1)
+            await bot.send_message(call.message.chat.id, 'Отлично, теперь отправь мне фотографию локации,'
+                                                         ' которую ты хочешь предложить!😀😀😀')
 
 
     @bot.message_handler(content_types=['location'])
@@ -88,19 +92,38 @@ if __name__ == '__main__':
         await bot.send_photo(message.chat.id, check(name, msg),
                              caption=f'Ты получил баллов: {answer[0]}. \n{answer[1]} - {search_by_coords(*name)[0]}',
                              reply_markup=markup)
-
         update_score(message.chat.id, answer[0])
         update_curr_img(message.chat.id, None)
 
 
+    @bot.message_handler(content_types=['photo'])
+    async def ask_text(message):
+        if print_suggest_stage(message.chat.id) == 1:
+            await bot.send_message(message.chat.id,
+                                   'Замечательно😁! Теперь отправь мне координаты данного места вида: широта, долгота')
+            with open(f'suggested_locations/{message.chat.id}.jpeg', 'wb') as photo:
+                file_info = await bot.get_file(message.photo[len(message.photo) - 1].file_id)
+                downloaded_file = await bot.download_file(file_info.file_path)
+                photo.write(downloaded_file)
+            update_suggest_stage(message.chat.id, 2)
+
+
     @bot.message_handler(content_types=['text'])
     async def asd_message(message):
-        if message.text.isdigit():
-            try:
-                imgs = getImages(int(message.text))
-                await bot.send_media_group(message.chat.id, [telebot.types.InputMediaPhoto(i) for i in imgs])
-            except ValueError:
-                await bot.send_message(message.chat.id, 'Неверный ввод')
+        try:
+            if print_suggest_stage(message.chat.id) == 2:
+                add_suggested_score(message.chat.id, *message.text.split(', '))
+                await bot.send_message(message.chat.id,
+                                       'Самое сложное позади, теперь просто напиши название этого места😎')
+                update_suggest_stage(message.chat.id, 3)
+            elif print_suggest_stage(message.chat.id) == 3:
+                print(message.text, message.chat.id)
+                add_photo_name(message.text, message.chat.id)
+                os.rename(f'suggested_locations/{message.chat.id}.jpeg',
+                          f'suggested_locations/{print_id(message.chat.id, message.text)}.jpeg')
+                await bot.send_message(message.chat.id, '😘')
+        except IndexError:
+            await bot.send_message(message.chat.id, 'Неверный ввод!')
 
 
     async def game_mods(message):

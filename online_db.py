@@ -15,7 +15,8 @@ def create_table():
                         curr_img TEXT,
                         time_bool INTEGER,
                         in_searching INTEGER,
-                        pair TEXT
+                        pair TEXT,
+                        suggest_stage INTEGER
                     )
                 ''')
 
@@ -150,6 +151,21 @@ def print_rating():
     cur = con.cursor()
     result = cur.execute(f"""SELECT score, name FROM players""").fetchall()
     return sorted(result, key=lambda x: x[0])
+
+
+def update_suggest_stage(id, stage):
+    con = sqlite3.connect('players.db')
+    with con:
+        cursor = con.cursor()
+        cursor.execute(f"""update players set suggest_stage = {stage} where id = {id}""")
+        con.commit()
+
+
+def print_suggest_stage(id):
+    con = sqlite3.connect("players.db")
+    cur = con.cursor()
+    result = cur.execute(f"""SELECT suggest_stage FROM players where id = {id}""").fetchall()
+    return result[0][0]
 
 
 create_table()

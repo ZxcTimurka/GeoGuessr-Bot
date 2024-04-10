@@ -1,14 +1,16 @@
-import telebot
-from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
-from telebot.async_telebot import AsyncTeleBot
 import asyncio
+
+import telebot
+from telebot.async_telebot import AsyncTeleBot
+from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
+
 from check_coords import check
 from config import TOKEN
+from db import search_by_coords, search_by_id
 from get_distance import getDistance
 from get_image import getImages, getImage
 from online_db import (add_player, print_curr_img, update_curr_img, update_time_bool, print_time_bool,
-                       print_ready, update_search, update_pair, print_pair, print_score, update_score, print_rating)
-from db import search_by_coords
+                       print_ready, update_search, update_pair, update_score, print_rating)
 
 token = TOKEN
 bot = AsyncTeleBot(token)
@@ -59,7 +61,8 @@ if __name__ == '__main__':
             await asyncio.gather(search)
         elif call.data == 'rate':
             players = print_rating()
-            text = '\n'.join([f'{i[0]}. {i[1][0]} баллов - {i[1][1]}' for i in enumerate(players, len(players))])
+            players = sorted(players, key=lambda x: x, reverse=True)
+            text = '\n'.join(sorted([f'{i + 1}. {j[0]} баллов - {j[1]}' for i, j in enumerate(players)]))
             await bot.send_message(call.message.chat.id, text)
         elif call.data == 'add':
             pass
@@ -74,8 +77,9 @@ if __name__ == '__main__':
         markup.add(InlineKeyboardButton('Назад', callback_data='play'),
                    InlineKeyboardButton('Продолжить', callback_data='classic_mode'))
         msg = tuple([message.location.latitude, message.location.longitude])
-        name = tuple([float(i) for i in ''.join(print_curr_img(message.chat.id))
-                     .replace('images/', '').replace('.jpeg', '').split(', ')])
+        name = [i for i in
+                ''.join(print_curr_img(message.chat.id)).replace('images/', '').replace('.jpeg', '').split(', ')]
+        name = search_by_id(name[0])
         answer = list(getDistance(*name, *msg))
         if print_time_bool(message.chat.id):
             if answer[0] == 0:
@@ -110,7 +114,7 @@ if __name__ == '__main__':
 
 
     async def classic_mode(message):
-        photo = getImage()
+        photo = open(getImage(), 'rb')
         update_curr_img(message.chat.id, photo.name)
         print(print_curr_img(message.chat.id))
         markup = InlineKeyboardMarkup()
@@ -119,7 +123,7 @@ if __name__ == '__main__':
 
 
     async def time_mod(message):
-        photo = getImage()
+        photo = open(getImage(), 'rb')
         update_curr_img(message.chat.id, photo.name)
         markup = InlineKeyboardMarkup()
         markup_lose = InlineKeyboardMarkup()
@@ -161,8 +165,9 @@ if __name__ == '__main__':
         print(print_curr_img(message.chat.id))
         markup = InlineKeyboardMarkup()
         markup.add(InlineKeyboardButton('Вернуться назад', callback_data='play'))
-        await bot.send_photo(id_enemy, open(photo, 'rb'), caption='Отправь мне координаты этого места', reply_markup=markup)
-        await bot.send_photo(message.chat.id, open(photo, 'rb'), caption='Отправь мне координаты этого места', reply_markup=markup)
-
+        await bot.send_photo(id_enemy, open(photo, 'rb'), caption='Отправь мне координаты этого места',
+                             reply_markup=markup)
+        await bot.send_photo(message.chat.id, open(photo, 'rb'), caption='Отправь мне координаты этого места',
+                             reply_markup=markup)
 
 asyncio.run(bot.polling())

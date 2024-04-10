@@ -5,7 +5,7 @@ files = os.listdir('images')
 
 
 def getImage():
-    return open(f'images/{random.choice(files)}', 'rb')
+    return f'images/{random.choice(files)}'
 
 
 def getImages(count):

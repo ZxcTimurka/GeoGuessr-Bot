@@ -110,20 +110,18 @@ if __name__ == '__main__':
 
     @bot.message_handler(content_types=['text'])
     async def asd_message(message):
-        try:
-            if print_suggest_stage(message.chat.id) == 2:
-                add_suggested_score(message.chat.id, *message.text.split(', '))
-                await bot.send_message(message.chat.id,
-                                       'Самое сложное позади, теперь просто напиши название этого места😎')
-                update_suggest_stage(message.chat.id, 3)
-            elif print_suggest_stage(message.chat.id) == 3:
-                print(message.text, message.chat.id)
-                add_photo_name(message.text, message.chat.id)
-                os.rename(f'suggested_locations/{message.chat.id}.jpeg',
-                          f'suggested_locations/{print_id(message.chat.id, message.text)}.jpeg')
-                await bot.send_message(message.chat.id, '😘')
-        except IndexError:
-            await bot.send_message(message.chat.id, 'Неверный ввод!')
+        if print_suggest_stage(message.chat.id) == 2:
+            add_suggested_score(message.chat.id, *message.text.split(', '))
+            await bot.send_message(message.chat.id,
+                                   'Самое сложное позади, теперь просто напиши название этого места😎')
+            update_suggest_stage(message.chat.id, 3)
+        elif print_suggest_stage(message.chat.id) == 3:
+            print(message.text, message.chat.id)
+            print(print_id(message.chat.id, message.text))
+            os.rename(f'suggested_locations/{message.chat.id}.jpeg',
+                      f'suggested_locations/{print_id(message.chat.id, message.text)}.jpeg')
+            add_photo_name(message.text, message.chat.id)
+            await bot.send_message(message.chat.id, '😘')
 
 
     async def game_mods(message):

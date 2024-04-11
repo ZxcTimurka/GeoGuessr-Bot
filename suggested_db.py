@@ -46,10 +46,10 @@ def add_photo_name(name, id):
         con.commit()
 
 
-def print_id(photo_id, name):
+def print_id(user_id, name):
     con = sqlite3.connect('suggested_images.db')
     cur = con.cursor()
-    result = cur.execute(f"""SELECT id FROM suggested_images WHERE user_id = {photo_id} and name = """).fetchall()
+    result = cur.execute(f"""SELECT id FROM suggested_images WHERE user_id = {user_id} and name = 'None'""").fetchall()
     return result[0][0]
 
 

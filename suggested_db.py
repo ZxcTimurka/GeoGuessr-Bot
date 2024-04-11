@@ -53,4 +53,18 @@ def print_id(user_id, name):
     return result[0][0]
 
 
+def get_all():
+    con = sqlite3.connect('suggested_images.db')
+    cur = con.cursor()
+    result = cur.execute(f"""SELECT * FROM suggested_images""").fetchall()
+    return result
+
+
+def delete_img(id):
+    con = sqlite3.connect('suggested_images.db')
+    cur = con.cursor()
+    cur.execute(f"""delete from suggested_images where id = {id}""")
+    con.commit()
+
+
 create_table()

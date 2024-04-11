@@ -15,7 +15,7 @@ def create_table():
                 ''')
 
 
-def add_score(name, coord0, coord1):
+def add_location(name, coord0, coord1):
     con = sqlite3.connect('images.db')
     with con:
         data = con.execute("select count(*) from sqlite_master where type='table' and name='images'")
@@ -53,3 +53,10 @@ def search_by_id(id):
                          (id,)).fetchall()
     for elem in result:
         return elem
+
+
+def next_id():
+    con = sqlite3.connect('images.db')
+    cur = con.cursor()
+    result = cur.execute("""select id from images""").fetchall()
+    return max(result)[0] + 1

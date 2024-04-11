@@ -1,21 +1,22 @@
 import asyncio
 import os
-import telebot
+
 from telebot.async_telebot import AsyncTeleBot
 from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
 
 from check_coords import check
 from config import TOKEN
-from db import search_by_coords, search_by_id
+from db import search_by_coords, search_by_id, next_id, add_location
 from get_distance import getDistance
-from get_image import getImages, getImage
+from get_image import getImage
 from online_db import (add_player, print_curr_img, update_curr_img, update_time_bool, print_time_bool,
                        print_ready, update_search, update_pair, update_score, print_rating, update_suggest_stage,
-                       print_suggest_stage)
-from suggested_db import add_suggested_score, add_photo_name, print_id
+                       print_suggest_stage, print_name)
+from suggested_db import add_suggested_score, add_photo_name, print_id, get_all, delete_img
 
 token = TOKEN
 bot = AsyncTeleBot(token)
+admins_id = [919813235, 1040654665]
 
 if __name__ == '__main__':
     @bot.message_handler(commands=['start'])
@@ -28,11 +29,14 @@ if __name__ == '__main__':
         markup.row(InlineKeyboardButton('Играть', callback_data='play'),
                    InlineKeyboardButton('Рейтинг', callback_data='rate'))
         markup.row(InlineKeyboardButton('Добавить локацию', callback_data='add'))
+        if message.chat.id in admins_id:
+            markup.row(InlineKeyboardButton('Админ панель', callback_data='admin_panel'))
         await bot.send_message(message.chat.id, text, reply_markup=markup)
 
 
     @bot.callback_query_handler(func=lambda call: True)
     async def callback_query(call):
+        global data, suggest
         if call.data == "back":
             await game_mods(call.message)
             await bot.delete_message(call.message.chat.id, call.message.message_id)
@@ -70,6 +74,64 @@ if __name__ == '__main__':
             update_suggest_stage(call.message.chat.id, 1)
             await bot.send_message(call.message.chat.id, 'Отлично, теперь отправь мне фотографию локации,'
                                                          ' которую ты хочешь предложить!😀😀😀')
+        elif call.data == 'confirm':
+            print(suggest)
+            if suggest == 0:
+                await bot.send_message(call.message.chat.id, 'Нет фото')
+                return
+            os.replace(f'suggested_locations/{suggest[0]}.jpeg', f'images/{next_id()}.jpeg')
+            add_location(suggest[2], suggest[3], suggest[4])
+            print(suggest[2], suggest[3], suggest[4])
+            delete_img(suggest[0])
+            suggest = next(data, 0)
+            if suggest == 0:
+                await bot.send_message(call.message.chat.id, 'Нет фото')
+                return
+            markup = InlineKeyboardMarkup()
+            markup.add(InlineKeyboardButton('Одобрить', callback_data='confirm'),
+                       InlineKeyboardButton('Отклонить', callback_data='decline'))
+            with open(f'suggested_locations/{suggest[0]}.jpeg', 'rb') as photo:
+                await bot.send_photo(call.message.chat.id, photo,
+                                     caption=f'Название: {suggest[2]}\nКоординаты: {suggest[3], suggest[4]}\nПредложил: {print_name(suggest[1])}',
+                                     reply_markup=markup)
+        elif call.data == 'decline':
+            if suggest == 0:
+                await bot.send_message(call.message.chat.id, 'Нет фото')
+                return
+            os.remove(f'suggested_locations/{suggest[0]}.jpeg')
+            delete_img(suggest[0])
+            suggest = next(data, 0)
+            if suggest == 0:
+                await bot.send_message(call.message.chat.id, 'Нет фото')
+                return
+            markup = InlineKeyboardMarkup()
+            markup.add(InlineKeyboardButton('Одобрить', callback_data='confirm'),
+                       InlineKeyboardButton('Отклонить', callback_data='decline'))
+            with open(f'suggested_locations/{suggest[0]}.jpeg', 'rb') as photo:
+                await bot.send_photo(call.message.chat.id, photo,
+                                     caption=f'Название: {suggest[2]}\nКоординаты: {suggest[3], suggest[4]}\nПредложил: {print_name(suggest[1])}',
+                                     reply_markup=markup)
+        elif call.data == 'admin_panel':
+            temp_data = get_all()
+
+            def generator(temp_data):
+                for i in temp_data:
+                    yield i
+
+            data = generator(temp_data)
+
+            await bot.send_message(call.message.chat.id, 'Привет, админ', parse_mode='Markdown')
+            suggest = next(data, 0)
+            if suggest == 0:
+                await bot.send_message(call.message.chat.id, 'Нет фото')
+                return
+            markup = InlineKeyboardMarkup()
+            markup.add(InlineKeyboardButton('Одобрить', callback_data='confirm'),
+                       InlineKeyboardButton('Отклонить', callback_data='decline'))
+            with open(f'suggested_locations/{suggest[0]}.jpeg', 'rb') as photo:
+                await bot.send_photo(call.message.chat.id, photo,
+                                     caption=f'Название: {suggest[2]}\nКоординаты: {suggest[3], suggest[4]}\nПредложил: {print_name(suggest[1])}',
+                                     reply_markup=markup)
 
 
     @bot.message_handler(content_types=['location'])
@@ -110,18 +172,22 @@ if __name__ == '__main__':
 
     @bot.message_handler(content_types=['text'])
     async def asd_message(message):
-        if print_suggest_stage(message.chat.id) == 2:
-            add_suggested_score(message.chat.id, *message.text.split(', '))
-            await bot.send_message(message.chat.id,
-                                   'Самое сложное позади, теперь просто напиши название этого места😎')
-            update_suggest_stage(message.chat.id, 3)
-        elif print_suggest_stage(message.chat.id) == 3:
-            print(message.text, message.chat.id)
-            print(print_id(message.chat.id, message.text))
-            os.rename(f'suggested_locations/{message.chat.id}.jpeg',
-                      f'suggested_locations/{print_id(message.chat.id, message.text)}.jpeg')
-            add_photo_name(message.text, message.chat.id)
-            await bot.send_message(message.chat.id, '😘')
+        try:
+            if print_suggest_stage(message.chat.id) == 2:
+                add_suggested_score(message.chat.id, *message.text.split(', '))
+                await bot.send_message(message.chat.id,
+                                       'Самое сложное позади, теперь просто напиши название этого места😎')
+                update_suggest_stage(message.chat.id, 3)
+            elif print_suggest_stage(message.chat.id) == 3:
+                print(message.text, message.chat.id)
+                print(print_id(message.chat.id, message.text))
+                os.rename(f'suggested_locations/{message.chat.id}.jpeg',
+                          f'suggested_locations/{print_id(message.chat.id, message.text)}.jpeg')
+                add_photo_name(message.text, message.chat.id)
+                await bot.send_message(message.chat.id, '😘')
+                update_suggest_stage(message.chat.id, 0)
+        except IndexError:
+            await bot.send_message(message.chat.id, 'чет не верно')
 
 
     async def game_mods(message):

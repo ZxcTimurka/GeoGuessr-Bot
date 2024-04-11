@@ -168,4 +168,11 @@ def print_suggest_stage(id):
     return result[0][0]
 
 
+def print_name(id):
+    con = sqlite3.connect("players.db")
+    cur = con.cursor()
+    result = cur.execute(f"""SELECT name FROM players where id = {id}""").fetchall()
+    return result[0][0]
+
+
 create_table()

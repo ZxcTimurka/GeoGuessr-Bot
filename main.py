@@ -14,7 +14,7 @@ from suggested_db import add_suggested_score, add_photo_name, print_id, get_all,
 
 token = TOKEN
 bot = AsyncTeleBot(token)
-admins_id = [919813235, 1040654665]
+admins_id = [919813235, 1040654665, 1081575937]
 
 if __name__ == '__main__':
     @bot.message_handler(commands=['start'])
@@ -38,6 +38,10 @@ if __name__ == '__main__':
         if call.data == "back":
             await game_mods(call.message)
             await bot.delete_message(call.message.chat.id, call.message.message_id)
+        elif call.data == 'back1':
+            await start_message(call.message)
+            await bot.delete_message(call.message.chat.id, call.message.message_id)
+            update_suggest_stage(call.message.chat.id, 0)
         elif call.data == 'play':
             await game_mods(call.message)
             await bot.delete_message(call.message.chat.id, call.message.message_id)
@@ -67,11 +71,17 @@ if __name__ == '__main__':
             players = print_rating()
             players = sorted(players, key=lambda x: x, reverse=True)
             text = '\n'.join(sorted([f'{i + 1}. {j[0]} баллов - {j[1]}' for i, j in enumerate(players)]))
-            await bot.send_message(call.message.chat.id, text)
+            markup = InlineKeyboardMarkup()
+            markup.add(InlineKeyboardButton('Назад', callback_data='back1'))
+            await bot.send_message(call.message.chat.id, text, reply_markup=markup)
+            await bot.delete_message(call.message.chat.id, call.message.message_id)
         elif call.data == 'add':
             update_suggest_stage(call.message.chat.id, 1)
+            markup = InlineKeyboardMarkup()
+            markup.add(InlineKeyboardButton('Назад', callback_data='back1'))
             await bot.send_message(call.message.chat.id, 'Отлично, теперь отправь мне фотографию локации,'
-                                                         ' которую ты хочешь предложить!😀😀😀')
+                                                         ' которую ты хочешь предложить!😀😀😀', reply_markup=markup)
+            await bot.delete_message(call.message.chat.id, call.message.message_id)
         elif call.data == 'confirm':
             await bot.delete_message(call.message.chat.id, call.message.message_id)
             os.replace(f'suggested_locations/{suggest[0]}.jpeg', f'images/{next_id()}.jpeg')
@@ -176,6 +186,7 @@ if __name__ == '__main__':
                 add_photo_name(message.text, message.chat.id)
                 update_suggest_stage(message.chat.id, 0)
                 await bot.send_message(message.chat.id, '😘')
+                await start_message(message)
         except IndexError:
             await bot.send_message(message.chat.id, 'чет не верно')
 
@@ -186,7 +197,7 @@ if __name__ == '__main__':
         markup.row(InlineKeyboardButton('Обычный', callback_data='classic_mode'),
                    InlineKeyboardButton('На время', callback_data='time_mode'),
                    InlineKeyboardButton('Онлайн', callback_data='online_mode'))
-        markup.row(InlineKeyboardButton('Описание режимов', callback_data='des_game_mode'))
+        markup.row(InlineKeyboardButton('назад', callback_data='back1'))
         await bot.send_message(message.chat.id, text, reply_markup=markup)
 
 

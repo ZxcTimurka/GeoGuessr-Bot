@@ -10,4 +10,4 @@ def getImage():
 
 def getImages(count):
     files = os.listdir('images')
-    return [open(f'images/{i}', 'rb') for i in random.sample(files, count)]
+    return [f'images/{i}' for i in random.sample(files, count)]

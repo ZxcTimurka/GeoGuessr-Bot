@@ -6,10 +6,10 @@ from check_coords import check
 from config import TOKEN
 from db import search_by_coords, search_by_id, next_id, add_location
 from get_distance import getDistance
-from get_image import getImage
+from get_image import getImage, getImages
 from online_db import (add_player, print_curr_img, update_curr_img, update_time_bool, print_time_bool,
                        print_ready, update_search, update_pair, update_score, print_rating, update_suggest_stage,
-                       print_suggest_stage, print_name)
+                       print_suggest_stage, print_name, update_online_imgs, print_online_imgs)
 from suggested_db import add_suggested_score, add_photo_name, print_id, get_all, delete_img
 
 token = TOKEN
@@ -65,8 +65,8 @@ if __name__ == '__main__':
             update_search(call.message.chat.id, 1)
             await bot.send_message(call.message.chat.id, text, parse_mode='Markdown')
             await bot.delete_message(call.message.chat.id, call.message.message_id)
+            online_tim = asyncio.create_task(online_timer(call.message.chat.id))
             search = asyncio.create_task(online_search(call.message))
-            await asyncio.gather(search)
         elif call.data == 'rate':
             players = print_rating()
             players = sorted(players, key=lambda x: x, reverse=True)
@@ -229,28 +229,51 @@ if __name__ == '__main__':
         await bot.send_message(message.chat.id, f'*Время вышло!*\nОтгаданных картинок: {0}', parse_mode="Markdown")
 
 
+    async def online_timer(id):
+        await asyncio.sleep(5)
+        update_search(id, 0)
+        return True
+
+
     async def online_search(message):
-        await asyncio.sleep(5 + len(print_ready() * 2))
-        if message.chat.id in print_ready():
-            for i in print_ready():
-                if i != message.chat.id:
-                    print(message.chat.id, print_ready(), i)
-                    update_pair(message.chat.id, i)
-                    update_search(print_ready()[0], 0)
-                    update_search(message.chat.id, 0)
-                    await bot.send_message(message.chat.id, f'Я нашел игрока! {i}')
-                    await bot.send_message(i, f'Я нашел игрока!{message.chat.id}')
-                    await online_mode(message, i)
-        if message.chat.id in print_ready():
-            await bot.send_message(message.chat.id, 'Я никого не нашел😭😭😭')
-            update_search(message.chat.id, 0)
+        while True:
+            players = print_ready()
+            print(players)
+            if message.chat.id not in players:
+                break
+            if len(players) >= 2:
+                for i in players:
+                    if i != message.chat.id:
+                        update_pair(message.chat.id, i)
+                        update_search(players[0], 0)
+                        update_search(message.chat.id, 0)
+                        await bot.send_message(message.chat.id, f'Я нашел игрока! {i}')
+                        await bot.send_message(i, f'Я нашел игрока!{message.chat.id}')
+                        await online_mode(message, i)
+                        break
+
+        # await asyncio.sleep(5 + len(print_ready() * 2))
+        # if message.chat.id in print_ready() and len(print_ready()) >= 2:
+        #     for i in print_ready():
+        #         if i != message.chat.id:
+        #             print(message.chat.id, print_ready(), i)
+        #             update_pair(message.chat.id, i)
+        #             update_search(print_ready()[0], 0)
+        #             update_search(message.chat.id, 0)
+        #             await bot.send_message(message.chat.id, f'Я нашел игрока! {i}')
+        #             await bot.send_message(i, f'Я нашел игрока!{message.chat.id}')
+        #             await online_mode(message, i)
+        # elif not print_ready():
+        #     await bot.send_message(message.chat.id, 'Я никого не нашел😭😭😭')
+        #     update_search(message.chat.id, 0)
 
 
     async def online_mode(message, id_enemy):
-        photo = getImage()
-        update_curr_img(message.chat.id, photo.replace('.jpeg', '').replace('images/', ''))
-        update_curr_img(id_enemy, photo.replace('.jpeg', '').replace('images/', ''))
-        print(print_curr_img(message.chat.id))
+        temp_data = getImages(7)
+        update_online_imgs(message.chat.id, ':'.join(temp_data))
+        update_online_imgs(id_enemy, ':'.join(temp_data))
+        photo = print_online_imgs(message.chat.id).split(':')[0]
+        print(photo, temp_data)
         markup = InlineKeyboardMarkup()
         markup.add(InlineKeyboardButton('Вернуться назад', callback_data='play'))
         await bot.send_photo(id_enemy, open(photo, 'rb'), caption='Отправь мне координаты этого места',

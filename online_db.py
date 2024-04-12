@@ -16,7 +16,8 @@ def create_table():
                         time_bool INTEGER,
                         in_searching INTEGER,
                         pair TEXT,
-                        suggest_stage INTEGER
+                        suggest_stage INTEGER,
+                        online_imgs TEXT
                     )
                 ''')
 
@@ -50,8 +51,8 @@ def add_player(id, name):
                     with con:
                         cursor = con.cursor()
                         cursor.execute('''
-                              INSERT INTO players(id, name, time, score, image_id, curr_img) VALUES(?, ?, ?, ?, ?, ?)
-                         ''', (id, name, 0, 0, 0, None))
+                              INSERT INTO players(id, name, time, score, image_id, curr_img, time_bool) VALUES(?, ?, ?, ?, ?, ?, ?)
+                         ''', (id, name, 0, 0, 0, None, False))
                         con.commit()
 
 
@@ -172,6 +173,21 @@ def print_name(id):
     con = sqlite3.connect("players.db")
     cur = con.cursor()
     result = cur.execute(f"""SELECT name FROM players where id = {id}""").fetchall()
+    return result[0][0]
+
+
+def update_online_imgs(id, imgs):
+    con = sqlite3.connect('players.db')
+    with con:
+        cursor = con.cursor()
+        cursor.execute(f"""update players set online_imgs = '{imgs}' where id = {id}""")
+        con.commit()
+
+
+def print_online_imgs(id):
+    con = sqlite3.connect("players.db")
+    cur = con.cursor()
+    result = cur.execute(f"""SELECT online_imgs FROM players where id = {id}""").fetchall()
     return result[0][0]
 
 

@@ -15,7 +15,7 @@ def create_table():
                         curr_img TEXT,
                         time_bool INTEGER,
                         in_searching INTEGER,
-                        pair TEXT,
+                        pair INTEGER,
                         suggest_stage INTEGER,
                         online_imgs TEXT
                     )
@@ -142,8 +142,8 @@ def update_pair(id, id1):
     with con:
         cursor = con.cursor()
         print(id, id1)
-        cursor.execute(f"""update players set pair = '{id}' where id = {id1}""")
-        cursor.execute(f"""update players set pair = '{id1}' where id = {id}""")
+        cursor.execute(f"""update players set pair = {id} where id = {id1}""")
+        cursor.execute(f"""update players set pair = {id1} where id = {id}""")
         con.commit()
 
 

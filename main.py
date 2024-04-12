@@ -1,9 +1,7 @@
 import asyncio
 import os
-
 from telebot.async_telebot import AsyncTeleBot
 from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
-
 from check_coords import check
 from config import TOKEN
 from db import search_by_coords, search_by_id, next_id, add_location
@@ -75,17 +73,13 @@ if __name__ == '__main__':
             await bot.send_message(call.message.chat.id, 'Отлично, теперь отправь мне фотографию локации,'
                                                          ' которую ты хочешь предложить!😀😀😀')
         elif call.data == 'confirm':
-            print(suggest)
-            if suggest == 0:
-                await bot.send_message(call.message.chat.id, 'Нет фото')
-                return
+            await bot.delete_message(call.message.chat.id, call.message.message_id)
             os.replace(f'suggested_locations/{suggest[0]}.jpeg', f'images/{next_id()}.jpeg')
             add_location(suggest[2], suggest[3], suggest[4])
-            print(suggest[2], suggest[3], suggest[4])
             delete_img(suggest[0])
             suggest = next(data, 0)
             if suggest == 0:
-                await bot.send_message(call.message.chat.id, 'Нет фото')
+                await bot.send_message(call.message.chat.id, 'Предложения закончились')
                 return
             markup = InlineKeyboardMarkup()
             markup.add(InlineKeyboardButton('Одобрить', callback_data='confirm'),
@@ -95,14 +89,12 @@ if __name__ == '__main__':
                                      caption=f'Название: {suggest[2]}\nКоординаты: {suggest[3], suggest[4]}\nПредложил: {print_name(suggest[1])}',
                                      reply_markup=markup)
         elif call.data == 'decline':
-            if suggest == 0:
-                await bot.send_message(call.message.chat.id, 'Нет фото')
-                return
+            await bot.delete_message(call.message.chat.id, call.message.message_id)
             os.remove(f'suggested_locations/{suggest[0]}.jpeg')
             delete_img(suggest[0])
             suggest = next(data, 0)
             if suggest == 0:
-                await bot.send_message(call.message.chat.id, 'Нет фото')
+                await bot.send_message(call.message.chat.id, 'Предложения закончились')
                 return
             markup = InlineKeyboardMarkup()
             markup.add(InlineKeyboardButton('Одобрить', callback_data='confirm'),
@@ -119,11 +111,9 @@ if __name__ == '__main__':
                     yield i
 
             data = generator(temp_data)
-
-            await bot.send_message(call.message.chat.id, 'Привет, админ', parse_mode='Markdown')
             suggest = next(data, 0)
             if suggest == 0:
-                await bot.send_message(call.message.chat.id, 'Нет фото')
+                await bot.send_message(call.message.chat.id, 'Предложений нет')
                 return
             markup = InlineKeyboardMarkup()
             markup.add(InlineKeyboardButton('Одобрить', callback_data='confirm'),
@@ -184,8 +174,8 @@ if __name__ == '__main__':
                 os.rename(f'suggested_locations/{message.chat.id}.jpeg',
                           f'suggested_locations/{print_id(message.chat.id, message.text)}.jpeg')
                 add_photo_name(message.text, message.chat.id)
-                await bot.send_message(message.chat.id, '😘')
                 update_suggest_stage(message.chat.id, 0)
+                await bot.send_message(message.chat.id, '😘')
         except IndexError:
             await bot.send_message(message.chat.id, 'чет не верно')
 

@@ -1,21 +1,23 @@
 import asyncio
 import os
+
 from telebot.async_telebot import AsyncTeleBot
 from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
+
 from check_coords import check
 from config import TOKEN
 from db import search_by_coords, search_by_id, next_id, add_location
 from get_distance import getDistance
 from get_image import getImage, getImages
 from online_db import (add_player, print_curr_img, update_curr_img, update_time_bool, print_time_bool,
-                       print_ready, update_search, update_pair, print_pair, update_score, print_rating, update_suggest_stage,
-                       print_suggest_stage, print_name, update_online_imgs, print_online_imgs)
+                       print_ready, update_search, update_pair, print_pair, update_score, print_rating,
+                       update_suggest_stage,
+                       print_suggest_stage, print_name, update_online_imgs, print_online_imgs, clear_pair)
 from suggested_db import add_suggested_score, add_photo_name, print_id, get_all, delete_img
 
 token = TOKEN
 bot = AsyncTeleBot(token)
 admins_id = [919813235, 1040654665, 1081575937]
-
 
 if __name__ == '__main__':
     @bot.message_handler(commands=['start'])
@@ -235,7 +237,7 @@ if __name__ == '__main__':
 
 
     async def online_timer(id):
-        await asyncio.sleep(15)
+        await asyncio.sleep(5)
         print(print_pair(id), 123)
         if not print_pair(id):
             await bot.send_message(id, 'Я никого не нашел')
@@ -247,10 +249,9 @@ if __name__ == '__main__':
     async def online_search(event, message):
         while not event.is_set():
             players = print_ready()
-            print(players)
             if message.chat.id not in players:
-                await bot.send_message(message.chat.id, 'таймер закончился')
                 break
+            clear_pair(message.chat.id)
             if len(players) >= 2:
                 for i in players:
                     if i != message.chat.id:
@@ -261,27 +262,10 @@ if __name__ == '__main__':
                         await bot.send_message(i, f'Я нашел игрока!{message.chat.id}')
                         await online_mode(message, i)
                         break
-            await bot.edit_message_text(f'идёт поиск', message.chat.id, message.message_id)
+            await asyncio.sleep(0)
             if event.is_set():
-                await bot.delete_message(message.chat.id, message.message_id)
+                await asyncio.sleep(0)
                 break
-
-
-
-        # await asyncio.sleep(5 + len(print_ready() * 2))
-        # if message.chat.id in print_ready() and len(print_ready()) >= 2:
-        #     for i in print_ready():
-        #         if i != message.chat.id:
-        #             print(message.chat.id, print_ready(), i)
-        #             update_pair(message.chat.id, i)
-        #             update_search(print_ready()[0], 0)
-        #             update_search(message.chat.id, 0)
-        #             await bot.send_message(message.chat.id, f'Я нашел игрока! {i}')
-        #             await bot.send_message(i, f'Я нашел игрока!{message.chat.id}')
-        #             await online_mode(message, i)
-        # elif not print_ready():
-        #     await bot.send_message(message.chat.id, 'Я никого не нашел😭😭😭')
-        #     update_search(message.chat.id, 0)
 
 
     async def online_mode(message, id_enemy):

@@ -134,7 +134,7 @@ def print_pair(id):
     cur = con.cursor()
     result = cur.execute(f"""SELECT pair FROM players WHERE id = {id}""").fetchall()
     for elem in result:
-        return elem
+        return elem[0]
 
 
 def update_pair(id, id1):
@@ -144,6 +144,14 @@ def update_pair(id, id1):
         print(id, id1)
         cursor.execute(f"""update players set pair = {id} where id = {id1}""")
         cursor.execute(f"""update players set pair = {id1} where id = {id}""")
+        con.commit()
+
+
+def clear_pair(id):
+    con = sqlite3.connect('players.db')
+    with con:
+        cursor = con.cursor()
+        cursor.execute(f"""update players set pair = 0 where id = {id}""")
         con.commit()
 
 

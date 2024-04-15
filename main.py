@@ -120,6 +120,8 @@ if __name__ == '__main__':
                 await bot.send_photo(call.message.chat.id, photo,
                                      caption=f'Название: {suggest[2]}\nКоординаты: {suggest[3], suggest[4]}\nПредложил: {print_name(suggest[1])}',
                                      reply_markup=markup)
+        elif call.data == 'online_call':
+            await online_mode(call.message)
         elif call.data == 'admin_panel':
             temp_data = get_all()
 
@@ -143,16 +145,19 @@ if __name__ == '__main__':
 
     @bot.message_handler(content_types=['location'])
     async def fgh_message(message):
+        print('loc')
         if not print_curr_img(message.chat.id)[0]:
             await bot.send_message(message.chat.id, 'Cначала нажми кнопку /start и выбери режим')
             return
         markup = InlineKeyboardMarkup()
-        markup.add(InlineKeyboardButton('Назад', callback_data='play'),
-                   InlineKeyboardButton('Продолжить', callback_data='classic_mode'))
+        if print_pair(message.chat.id) == 0:
+            markup.add(InlineKeyboardButton('Назад', callback_data='play'),
+                       InlineKeyboardButton('Продолжить', callback_data='classic_mode'))
         msg = tuple([message.location.latitude, message.location.longitude])
         name = [i for i in
                 ''.join(print_curr_img(message.chat.id)).replace('images/', '').replace('.jpeg', '').split(', ')]
         name = search_by_id(name[0])
+        print(*name, *msg,444)
         answer = list(getDistance(*name, *msg))
         if print_time_bool(message.chat.id):
             if answer[0] == 0:
@@ -161,8 +166,12 @@ if __name__ == '__main__':
         await bot.send_photo(message.chat.id, check(name, msg),
                              caption=f'Ты получил баллов: {answer[0]}. \n{answer[1]} - {search_by_coords(*name)[0]}',
                              reply_markup=markup)
+        if print_pair(message.chat.id) != 0:
+            await online_mode(message)
+        else:
+            update_curr_img(message.chat.id, None)
         update_score(message.chat.id, answer[0])
-        update_curr_img(message.chat.id, None)
+
 
 
     @bot.message_handler(content_types=['photo'])
@@ -239,7 +248,7 @@ if __name__ == '__main__':
     async def online_timer(id):
         await asyncio.sleep(5)
         print(print_pair(id), 123)
-        if not print_pair(id):
+        if print_pair(id) == 0:
             await bot.send_message(id, 'Я никого не нашел')
             return True
         update_search(id, 0)
@@ -260,25 +269,40 @@ if __name__ == '__main__':
                         update_search(message.chat.id, 0)
                         await bot.send_message(message.chat.id, f'Я нашел игрока! {i}')
                         await bot.send_message(i, f'Я нашел игрока!{message.chat.id}')
-                        await online_mode(message, i)
+                        update_online_imgs(message.chat.id, 0)
+                        update_online_imgs(i, 0)
+                        await getimages_online(message, i)
                         break
             await asyncio.sleep(0)
             if event.is_set():
                 await asyncio.sleep(0)
                 break
 
+    async def getimages_online(message, id_enemy):
+        update_online_imgs(message.chat.id, 0)
+        update_online_imgs(id_enemy, 0)
+        data = getImages(7)
+        update_online_imgs(message.chat.id, ':'.join(data))
+        update_online_imgs(id_enemy, ':'.join(data))
+        markup = InlineKeyboardMarkup()
+        markup.add(InlineKeyboardButton('Продолжить', callback_data='online_call'))
+        await bot.send_message(message.chat.id, f'Твоя задача отгадать 7 картинок быстрее, чем твой соперник!', reply_markup=markup)
+        await bot.send_message(id_enemy, f'Твоя задача отгадать 7 картинок быстрее, чем твой соперник!', reply_markup=markup)
 
-    async def online_mode(message, id_enemy):
-        temp_data = getImages(7)
-        update_online_imgs(message.chat.id, ':'.join(temp_data))
-        update_online_imgs(id_enemy, ':'.join(temp_data))
+    async def online_mode(message):
+        print(type(message))
+        temp_data = print_online_imgs(message.chat.id).split(':')
         photo = print_online_imgs(message.chat.id).split(':')[0]
         print(photo, temp_data)
         markup = InlineKeyboardMarkup()
         markup.add(InlineKeyboardButton('Вернуться назад', callback_data='play'))
-        await bot.send_photo(id_enemy, open(photo, 'rb'), caption='Отправь мне координаты этого места',
-                             reply_markup=markup)
+        update_curr_img(message.chat.id, photo)
         await bot.send_photo(message.chat.id, open(photo, 'rb'), caption='Отправь мне координаты этого места',
-                             reply_markup=markup)
+                            reply_markup=markup)
+        if len(temp_data) > 1:
+            update_online_imgs(message.chat.id, ':'.join(temp_data[1:]))
+        else:
+            pass
+            # await end_online_mode
 
 asyncio.run(bot.polling())

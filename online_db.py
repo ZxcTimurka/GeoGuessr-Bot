@@ -44,15 +44,15 @@ def add_player(id, name):
                     with con:
                         cursor = con.cursor()
                         cursor.execute('''
-                            INSERT INTO players(id, name, time, score, image_id, curr_img, time_bool) VALUES(?, ?, ?, ?, ?, ?, ?)
-                        ''', (id, name, 0, 0, 0, None, False))
+                            INSERT INTO players(id, name, time, score, image_id, curr_img, time_bool, pair) VALUES(?, ?, ?, ?, ?, ?, ?, ?)
+                        ''', (id, name, 0, 0, 0, None, False, 0))
                         con.commit()
                 else:
                     with con:
                         cursor = con.cursor()
                         cursor.execute('''
-                              INSERT INTO players(id, name, time, score, image_id, curr_img, time_bool) VALUES(?, ?, ?, ?, ?, ?, ?)
-                         ''', (id, name, 0, 0, 0, None, False))
+                              INSERT INTO players(id, name, time, score, image_id, curr_img, time_bool, pair) VALUES(?, ?, ?, ?, ?, ?, ?, ?)
+                         ''', (id, name, 0, 0, 0, None, False, 0))
                         con.commit()
 
 

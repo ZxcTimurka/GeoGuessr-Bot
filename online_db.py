@@ -15,7 +15,9 @@ def create_table():
                         curr_img TEXT,
                         time_bool INTEGER,
                         in_searching INTEGER,
-                        pair TEXT
+                        pair INTEGER,
+                        suggest_stage INTEGER,
+                        online_imgs TEXT
                     )
                 ''')
 
@@ -49,8 +51,8 @@ def add_player(id, name):
                     with con:
                         cursor = con.cursor()
                         cursor.execute('''
-                              INSERT INTO players(id, name, time, score, image_id, curr_img) VALUES(?, ?, ?, ?, ?, ?)
-                         ''', (id, name, 0, 0, 0, None))
+                              INSERT INTO players(id, name, time, score, image_id, curr_img, time_bool) VALUES(?, ?, ?, ?, ?, ?, ?)
+                         ''', (id, name, 0, 0, 0, None, False))
                         con.commit()
 
 
@@ -132,7 +134,7 @@ def print_pair(id):
     cur = con.cursor()
     result = cur.execute(f"""SELECT pair FROM players WHERE id = {id}""").fetchall()
     for elem in result:
-        return elem
+        return elem[0]
 
 
 def update_pair(id, id1):
@@ -140,8 +142,16 @@ def update_pair(id, id1):
     with con:
         cursor = con.cursor()
         print(id, id1)
-        cursor.execute(f"""update players set pair = '{id}' where id = {id1}""")
-        cursor.execute(f"""update players set pair = '{id1}' where id = {id}""")
+        cursor.execute(f"""update players set pair = {id} where id = {id1}""")
+        cursor.execute(f"""update players set pair = {id1} where id = {id}""")
+        con.commit()
+
+
+def clear_pair(id):
+    con = sqlite3.connect('players.db')
+    with con:
+        cursor = con.cursor()
+        cursor.execute(f"""update players set pair = 0 where id = {id}""")
         con.commit()
 
 
@@ -150,6 +160,43 @@ def print_rating():
     cur = con.cursor()
     result = cur.execute(f"""SELECT score, name FROM players""").fetchall()
     return sorted(result, key=lambda x: x[0])
+
+
+def update_suggest_stage(id, stage):
+    con = sqlite3.connect('players.db')
+    with con:
+        cursor = con.cursor()
+        cursor.execute(f"""update players set suggest_stage = {stage} where id = {id}""")
+        con.commit()
+
+
+def print_suggest_stage(id):
+    con = sqlite3.connect("players.db")
+    cur = con.cursor()
+    result = cur.execute(f"""SELECT suggest_stage FROM players where id = {id}""").fetchall()
+    return result[0][0]
+
+
+def print_name(id):
+    con = sqlite3.connect("players.db")
+    cur = con.cursor()
+    result = cur.execute(f"""SELECT name FROM players where id = {id}""").fetchall()
+    return result[0][0]
+
+
+def update_online_imgs(id, imgs):
+    con = sqlite3.connect('players.db')
+    with con:
+        cursor = con.cursor()
+        cursor.execute(f"""update players set online_imgs = '{imgs}' where id = {id}""")
+        con.commit()
+
+
+def print_online_imgs(id):
+    con = sqlite3.connect("players.db")
+    cur = con.cursor()
+    result = cur.execute(f"""SELECT online_imgs FROM players where id = {id}""").fetchall()
+    return result[0][0]
 
 
 create_table()

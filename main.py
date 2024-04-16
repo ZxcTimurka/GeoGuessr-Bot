@@ -11,7 +11,7 @@ from get_distance import getDistance
 from get_image import getImage, getImages
 from online_db import (add_player, print_curr_img, update_curr_img, update_time_bool, print_time_bool,
                        print_ready, update_search, update_pair, print_pair, update_score, print_rating,
-                       update_suggest_stage,
+                       update_suggest_stage, update_online_score, print_online_score,
                        print_suggest_stage, print_name, update_online_imgs, print_online_imgs, clear_pair)
 from suggested_db import add_suggested_score, add_photo_name, print_id, get_all, delete_img
 
@@ -159,6 +159,11 @@ if __name__ == '__main__':
         name = search_by_id(name[0])
         print(*name, *msg,444)
         answer = list(getDistance(*name, *msg))
+        if print_pair(message.chat.id) != 0:
+            update_online_score(message.chat.id, answer[0])
+            await online_mode(message)
+        else:
+            update_curr_img(message.chat.id, None)
         if print_time_bool(message.chat.id):
             if answer[0] == 0:
                 answer[0] = -5
@@ -166,10 +171,6 @@ if __name__ == '__main__':
         await bot.send_photo(message.chat.id, check(name, msg),
                              caption=f'Ты получил баллов: {answer[0]}. \n{answer[1]} - {search_by_coords(*name)[0]}',
                              reply_markup=markup)
-        if print_pair(message.chat.id) != 0:
-            await online_mode(message)
-        else:
-            update_curr_img(message.chat.id, None)
         update_score(message.chat.id, answer[0])
 
 
@@ -301,7 +302,26 @@ if __name__ == '__main__':
         if len(temp_data) > 1:
             update_online_imgs(message.chat.id, ':'.join(temp_data[1:]))
         else:
-            pass
-            # await end_online_mode
+            await end_online_mode(message.chat.id, print_pair(message.chat.id))
+
+
+    async def end_online_mode(id1, id2):
+        score1 = print_online_score(id1)
+        score2 = print_online_score(id2)
+        if score1 > score2:
+            await bot.send_message(id1, 'Поздравляю, ты победил😜!')
+            await bot.send_message(id2, 'Ты проиграл😨...')
+            update_score(id1, score1)
+            update_score(id2, -score2)
+        else:
+            await bot.send_message(id1, 'Ты проиграл😨...')
+            await bot.send_message(id2, 'Поздравляю, ты победил😜!')
+            update_score(id1, -score1)
+            update_score(id2, score2)
+        update_online_score(id1, 0)
+        update_online_score(id2, 0)
+        update_online_imgs(id1, 0)
+        update_online_imgs(id2, 0)
+
 
 asyncio.run(bot.polling())

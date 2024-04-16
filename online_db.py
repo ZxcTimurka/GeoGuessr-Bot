@@ -17,7 +17,8 @@ def create_table():
                         in_searching INTEGER,
                         pair INTEGER,
                         suggest_stage INTEGER,
-                        online_imgs TEXT
+                        online_imgs TEXT,
+                        online_score INTEGER
                     )
                 ''')
 
@@ -196,6 +197,21 @@ def print_online_imgs(id):
     con = sqlite3.connect("players.db")
     cur = con.cursor()
     result = cur.execute(f"""SELECT online_imgs FROM players where id = {id}""").fetchall()
+    return result[0][0]
+
+
+def update_online_score(id, score):
+    con = sqlite3.connect('players.db')
+    with con:
+        cursor = con.cursor()
+        cursor.execute(f"""update players set online_score = score + {score} where id = {id}""")
+        con.commit()
+
+
+def print_online_score(id):
+    con = sqlite3.connect("players.db")
+    cur = con.cursor()
+    result = cur.execute(f"""SELECT online_score FROM players where id = {id}""").fetchall()
     return result[0][0]
 
 

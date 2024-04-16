@@ -173,7 +173,6 @@ if __name__ == '__main__':
         update_score(message.chat.id, answer[0])
 
 
-
     @bot.message_handler(content_types=['photo'])
     async def ask_text(message):
         if print_suggest_stage(message.chat.id) == 1:

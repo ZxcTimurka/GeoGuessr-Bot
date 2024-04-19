@@ -122,7 +122,7 @@ if __name__ == '__main__':
                                      reply_markup=markup)
         elif call.data == 'online_call':
             await online_mode(call.message)
-        elif call.data == 'admin_panel':
+        elif call.data == 'suggesed':
             temp_data = get_all()
 
             def generator(temp_data):
@@ -131,8 +131,11 @@ if __name__ == '__main__':
 
             data = generator(temp_data)
             suggest = next(data, 0)
+            markup = InlineKeyboardMarkup()
+            markup.add(InlineKeyboardButton("Назад", callback_data='admin_panel'))
+            await bot.delete_message(call.message.chat.id, call.message.message_id)
             if suggest == 0:
-                await bot.send_message(call.message.chat.id, 'Предложений нет')
+                await bot.send_message(call.message.chat.id, 'Предложений нет', reply_markup=markup)
                 return
             markup = InlineKeyboardMarkup()
             markup.add(InlineKeyboardButton('Одобрить', callback_data='confirm'),
@@ -141,6 +144,14 @@ if __name__ == '__main__':
                 await bot.send_photo(call.message.chat.id, photo,
                                      caption=f'Название: {suggest[2]}\nКоординаты: {suggest[3], suggest[4]}\nПредложил: {print_name(suggest[1])}',
                                      reply_markup=markup)
+
+        elif call.data == 'admin_panel':
+            markup = InlineKeyboardMarkup()
+            markup.add(InlineKeyboardButton("Предложения", callback_data='suggesed'),
+                       InlineKeyboardButton("Ивенты", callback_data='ivents'))
+            markup.row(InlineKeyboardButton("Назад", callback_data='back1'))
+            await bot.send_message(call.message.chat.id, "Привет, админ", reply_markup=markup)
+            await bot.delete_message(call.message.chat.id, call.message.message_id)
 
 
     @bot.message_handler(content_types=['location'])
@@ -157,7 +168,7 @@ if __name__ == '__main__':
         name = [i for i in
                 ''.join(print_curr_img(message.chat.id)).replace('images/', '').replace('.jpeg', '').split(', ')]
         name = search_by_id(name[0])
-        print(*name, *msg,444)
+        print(*name, *msg, 444)
         answer = list(getDistance(*name, *msg))
         if print_pair(message.chat.id) != 0:
             update_online_score(message.chat.id, answer[0])
@@ -278,6 +289,7 @@ if __name__ == '__main__':
                 await asyncio.sleep(0)
                 break
 
+
     async def getimages_online(message, id_enemy):
         update_online_imgs(message.chat.id, 0)
         update_online_imgs(id_enemy, 0)
@@ -286,8 +298,11 @@ if __name__ == '__main__':
         update_online_imgs(id_enemy, ':'.join(data))
         markup = InlineKeyboardMarkup()
         markup.add(InlineKeyboardButton('Продолжить', callback_data='online_call'))
-        await bot.send_message(message.chat.id, f'Твоя задача отгадать 7 картинок быстрее, чем твой соперник!', reply_markup=markup)
-        await bot.send_message(id_enemy, f'Твоя задача отгадать 7 картинок быстрее, чем твой соперник!', reply_markup=markup)
+        await bot.send_message(message.chat.id, f'Твоя задача отгадать 7 картинок быстрее, чем твой соперник!',
+                               reply_markup=markup)
+        await bot.send_message(id_enemy, f'Твоя задача отгадать 7 картинок быстрее, чем твой соперник!',
+                               reply_markup=markup)
+
 
     async def online_mode(message):
         print(type(message))
@@ -298,7 +313,7 @@ if __name__ == '__main__':
         markup.add(InlineKeyboardButton('Вернуться назад', callback_data='play'))
         update_curr_img(message.chat.id, photo)
         await bot.send_photo(message.chat.id, open(photo, 'rb'), caption='Отправь мне координаты этого места',
-                            reply_markup=markup)
+                             reply_markup=markup)
         if len(temp_data) > 1:
             update_online_imgs(message.chat.id, ':'.join(temp_data[1:]))
         else:
@@ -322,6 +337,5 @@ if __name__ == '__main__':
         update_online_score(id2, 0)
         update_online_imgs(id1, 0)
         update_online_imgs(id2, 0)
-
 
 asyncio.run(bot.polling())

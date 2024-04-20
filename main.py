@@ -50,8 +50,7 @@ if __name__ == '__main__':
             await bot.delete_message(call.message.chat.id, call.message.message_id)
         elif call.data == 'classic_mode':
             await classic_mode(call.message)
-            if call.message.content_type != 'photo':
-                await bot.delete_message(call.message.chat.id, call.message.message_id)
+            await bot.delete_message(call.message.chat.id, call.message.message_id)
         elif call.data == 'time_mode':
             text = ('У тебя будет *одна* минута на отгадывание как можно большего числа картинок. Нажми *продолжить* '
                     'чтобы начать игру!')
@@ -59,10 +58,9 @@ if __name__ == '__main__':
             markup.row(InlineKeyboardButton('Продолжить', callback_data='start_time_mod'))
             await bot.send_message(call.message.chat.id, text, reply_markup=markup, parse_mode="Markdown")
         elif call.data == 'start_time_mod':
+            await bot.delete_message(call.message.chat.id, call.message.message_id)
             update_time_bool(call.message.chat.id, 1)
             await timer(call.message)
-            if call.message.content_type != 'photo':
-                await bot.delete_message(call.message.chat.id, call.message.message_id)
         elif call.data == 'online_mode':
             text = '*Поиск соперников...*'
             update_search(call.message.chat.id, 1)
@@ -95,8 +93,10 @@ if __name__ == '__main__':
             add_location(suggest[2], suggest[3], suggest[4])
             delete_img(suggest[0])
             suggest = next(data, 0)
+            markup = InlineKeyboardMarkup()
+            markup.add(InlineKeyboardButton("Назад", callback_data='admin_panel'))
             if suggest == 0:
-                await bot.send_message(call.message.chat.id, 'Предложения закончились')
+                await bot.send_message(call.message.chat.id, 'Предложения закончились', reply_markup=markup)
                 return
             markup = InlineKeyboardMarkup()
             markup.add(InlineKeyboardButton('Одобрить', callback_data='confirm'),
@@ -110,8 +110,10 @@ if __name__ == '__main__':
             os.remove(f'suggested_locations/{suggest[0]}.jpeg')
             delete_img(suggest[0])
             suggest = next(data, 0)
+            markup = InlineKeyboardMarkup()
+            markup.add(InlineKeyboardButton("Назад", callback_data='admin_panel'))
             if suggest == 0:
-                await bot.send_message(call.message.chat.id, 'Предложения закончились')
+                await bot.send_message(call.message.chat.id, 'Предложения закончились', reply_markup=markup)
                 return
             markup = InlineKeyboardMarkup()
             markup.add(InlineKeyboardButton('Одобрить', callback_data='confirm'),
@@ -253,7 +255,9 @@ if __name__ == '__main__':
         await asyncio.sleep(20)
         update_curr_img(message.chat.id, None)
         update_time_bool(message.chat.id, 0)
-        await bot.send_message(message.chat.id, f'*Время вышло!*\nОтгаданных картинок: {0}', parse_mode="Markdown")
+        markup = InlineKeyboardMarkup()
+        markup.add(InlineKeyboardButton('Назад', callback_data='back'))
+        await bot.send_message(message.chat.id, f'*Время вышло!*\nОтгаданных картинок: {0}', parse_mode="Markdown", reply_markup=markup)
 
 
     async def online_timer(id):

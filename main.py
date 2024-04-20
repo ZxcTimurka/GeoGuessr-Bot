@@ -18,6 +18,7 @@ from suggested_db import add_suggested_score, add_photo_name, print_id, get_all,
 token = TOKEN
 bot = AsyncTeleBot(token)
 admins_id = [919813235, 1040654665, 1081575937]
+koef = 1
 
 if __name__ == '__main__':
     @bot.message_handler(commands=['start'])
@@ -37,7 +38,7 @@ if __name__ == '__main__':
 
     @bot.callback_query_handler(func=lambda call: True)
     async def callback_query(call):
-        global data, suggest
+        global data, suggest, koef
         if call.data == "back":
             await game_mods(call.message)
             await bot.delete_message(call.message.chat.id, call.message.message_id)
@@ -154,6 +155,38 @@ if __name__ == '__main__':
             markup.row(InlineKeyboardButton("Назад", callback_data='back1'))
             await bot.send_message(call.message.chat.id, "Привет, админ", reply_markup=markup)
             await bot.delete_message(call.message.chat.id, call.message.message_id)
+        elif call.data == 'ivents':
+            await bot.delete_message(call.message.chat.id, call.message.message_id)
+            markup = InlineKeyboardMarkup()
+            markup.add(InlineKeyboardButton("2x", callback_data='2x'),
+                       InlineKeyboardButton("5x", callback_data='5x'),
+                       InlineKeyboardButton("10x", callback_data='10x'))
+            markup.row(InlineKeyboardButton("Очистить коэффициент", callback_data='clear_koef'))
+            await bot.send_message(call.message.chat.id, "Выберите коэффициент", reply_markup=markup)
+        elif call.data == '2x':
+            await bot.delete_message(call.message.chat.id, call.message.message_id)
+            markup = InlineKeyboardMarkup()
+            markup.add(InlineKeyboardButton("Назад", callback_data='admin_panel'))
+            await bot.send_message(call.message.chat.id, 'коэффициент 2x применён', reply_markup=markup)
+            koef = 2
+        elif call.data == '5x':
+            await bot.delete_message(call.message.chat.id, call.message.message_id)
+            markup = InlineKeyboardMarkup()
+            markup.add(InlineKeyboardButton("Назад", callback_data='admin_panel'))
+            await bot.send_message(call.message.chat.id, 'коэффициент 5x применён', reply_markup=markup)
+            koef = 5
+        elif call.data == '10x':
+            await bot.delete_message(call.message.chat.id, call.message.message_id)
+            markup = InlineKeyboardMarkup()
+            markup.add(InlineKeyboardButton("Назад", callback_data='admin_panel'))
+            await bot.send_message(call.message.chat.id, 'коэффициент 10x применён', reply_markup=markup)
+            koef = 10
+        elif call.data == 'clear_koef':
+            await bot.delete_message(call.message.chat.id, call.message.message_id)
+            markup = InlineKeyboardMarkup()
+            markup.add(InlineKeyboardButton("Назад", callback_data='admin_panel'))
+            await bot.send_message(call.message.chat.id, 'коэффициент очищен', reply_markup=markup)
+            koef = 1
 
 
     @bot.message_handler(content_types=['location'])
@@ -172,6 +205,7 @@ if __name__ == '__main__':
         name = search_by_id(name[0])
         print(*name, *msg, 444)
         answer = list(getDistance(*name, *msg))
+        answer[0] *= koef
         if print_pair(message.chat.id) != 0:
             update_online_score(message.chat.id, answer[0])
             await online_mode(message)
@@ -257,7 +291,8 @@ if __name__ == '__main__':
         update_time_bool(message.chat.id, 0)
         markup = InlineKeyboardMarkup()
         markup.add(InlineKeyboardButton('Назад', callback_data='back'))
-        await bot.send_message(message.chat.id, f'*Время вышло!*\nОтгаданных картинок: {0}', parse_mode="Markdown", reply_markup=markup)
+        await bot.send_message(message.chat.id, f'*Время вышло!*\nОтгаданных картинок: {0}', parse_mode="Markdown",
+                               reply_markup=markup)
 
 
     async def online_timer(id):

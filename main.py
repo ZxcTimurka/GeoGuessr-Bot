@@ -64,10 +64,10 @@ if __name__ == '__main__':
         elif call.data == 'online_mode':
             text = '*Поиск соперников...*'
             update_search(call.message.chat.id, 1)
-            await bot.send_message(call.message.chat.id, text, parse_mode='Markdown')
+            msg = await bot.send_message(call.message.chat.id, text, parse_mode='Markdown')
             await bot.delete_message(call.message.chat.id, call.message.message_id)
             event = asyncio.Event()
-            timer_task = asyncio.create_task(online_timer(call.message.chat.id))  # Запускаем таймер на 10 секунд
+            timer_task = asyncio.create_task(online_timer(call.message.chat.id, msg))  # Запускаем таймер на 10 секунд
             loop_task = asyncio.create_task(online_search(event, call.message))  # Запускаем бесконечный цикл
             if await timer_task:
                 event.set()
@@ -123,6 +123,7 @@ if __name__ == '__main__':
                                      caption=f'Название: {suggest[2]}\nКоординаты: {suggest[3], suggest[4]}\nПредложил: {print_name(suggest[1])}',
                                      reply_markup=markup)
         elif call.data == 'online_call':
+            await bot.delete_message(call.message.chat.id, call.message.message_id)
             await online_mode(call.message)
         elif call.data == 'suggesed':
             temp_data = get_all()
@@ -172,11 +173,6 @@ if __name__ == '__main__':
         name = search_by_id(name[0])
         print(*name, *msg, 444)
         answer = list(getDistance(*name, *msg))
-        if print_pair(message.chat.id) != 0:
-            update_online_score(message.chat.id, answer[0])
-            await online_mode(message)
-        else:
-            update_curr_img(message.chat.id, None)
         if print_time_bool(message.chat.id):
             if answer[0] == 0:
                 answer[0] = -5
@@ -184,6 +180,11 @@ if __name__ == '__main__':
         await bot.send_photo(message.chat.id, check(name, msg),
                              caption=f'Ты получил баллов: {answer[0]}. \n{answer[1]} - {search_by_coords(*name)[0]}',
                              reply_markup=markup)
+        if print_pair(message.chat.id) != 0:
+            update_online_score(message.chat.id, answer[0])
+            await online_mode(message)
+        else:
+            update_curr_img(message.chat.id, None)
         update_score(message.chat.id, answer[0])
 
 
@@ -260,11 +261,13 @@ if __name__ == '__main__':
         await bot.send_message(message.chat.id, f'*Время вышло!*\nОтгаданных картинок: {0}', parse_mode="Markdown", reply_markup=markup)
 
 
-    async def online_timer(id):
-        await asyncio.sleep(5)
-        print(print_pair(id), 123)
+    async def online_timer(id, message):
+        await asyncio.sleep(10)
+        await bot.delete_message(message.chat.id, message.message_id)
         if print_pair(id) == 0:
-            await bot.send_message(id, 'Я никого не нашел')
+            markup = InlineKeyboardMarkup()
+            markup.add(InlineKeyboardButton('Назад', callback_data='back'))
+            await bot.send_message(id, 'Я никого не нашел', reply_markup=markup)
             return True
         update_search(id, 0)
         return True
@@ -282,8 +285,8 @@ if __name__ == '__main__':
                         update_pair(message.chat.id, i)
                         update_search(i, 0)
                         update_search(message.chat.id, 0)
-                        await bot.send_message(message.chat.id, f'Я нашел игрока! {i}')
-                        await bot.send_message(i, f'Я нашел игрока!{message.chat.id}')
+                        await bot.send_message(message.chat.id, f'Я нашел игрока! Его зовут {print_name(i)}')
+                        await bot.send_message(i, f'Я нашел игрока! Его зовут {print_name(message.chat.id)}')
                         update_online_imgs(message.chat.id, 0)
                         update_online_imgs(i, 0)
                         await getimages_online(message, i)
@@ -310,31 +313,32 @@ if __name__ == '__main__':
 
     async def online_mode(message):
         print(type(message))
-        temp_data = print_online_imgs(message.chat.id).split(':')
-        photo = print_online_imgs(message.chat.id).split(':')[0]
-        print(photo, temp_data)
-        markup = InlineKeyboardMarkup()
-        markup.add(InlineKeyboardButton('Вернуться назад', callback_data='play'))
-        update_curr_img(message.chat.id, photo)
-        await bot.send_photo(message.chat.id, open(photo, 'rb'), caption='Отправь мне координаты этого места',
-                             reply_markup=markup)
-        if len(temp_data) > 1:
-            update_online_imgs(message.chat.id, ':'.join(temp_data[1:]))
-        else:
+        try:
+            temp_data = print_online_imgs(message.chat.id).split(':')
+            photo = print_online_imgs(message.chat.id).split(':')[0]
+            print(photo, temp_data)
+            update_curr_img(message.chat.id, photo)
+            await bot.send_photo(message.chat.id, open(photo, 'rb'), caption='Отправь мне координаты этого места')
+        except Exception:
             await end_online_mode(message.chat.id, print_pair(message.chat.id))
+            return
+
+        update_online_imgs(message.chat.id, ':'.join(temp_data[1:]))
 
 
     async def end_online_mode(id1, id2):
         score1 = print_online_score(id1)
         score2 = print_online_score(id2)
+        markup = InlineKeyboardMarkup()
+        markup.add(InlineKeyboardButton('Назад', callback_data='back'))
         if score1 > score2:
-            await bot.send_message(id1, 'Поздравляю, ты победил😜!')
-            await bot.send_message(id2, 'Ты проиграл😨...')
+            await bot.send_message(id1, 'Поздравляю, ты победил😜!', reply_markup=markup)
+            await bot.send_message(id2, 'Ты проиграл😨...', reply_markup=markup)
             update_score(id1, score1)
             update_score(id2, -score2)
         else:
-            await bot.send_message(id1, 'Ты проиграл😨...')
-            await bot.send_message(id2, 'Поздравляю, ты победил😜!')
+            await bot.send_message(id1, 'Ты проиграл😨...', reply_markup=markup)
+            await bot.send_message(id2, 'Поздравляю, ты победил😜!', reply_markup=markup)
             update_score(id1, -score1)
             update_score(id2, score2)
         update_online_score(id1, 0)

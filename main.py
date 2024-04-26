@@ -52,6 +52,7 @@ if __name__ == '__main__':
             await classic_mode(call.message)
             await bot.delete_message(call.message.chat.id, call.message.message_id)
         elif call.data == 'time_mode':
+            await bot.delete_message(call.message.chat.id, call.message.message_id)
             text = ('У тебя будет *одна* минута на отгадывание как можно большего числа картинок. Нажми *продолжить* '
                     'чтобы начать игру!')
             markup = InlineKeyboardMarkup()
@@ -62,10 +63,14 @@ if __name__ == '__main__':
             update_time_bool(call.message.chat.id, 1)
             await timer(call.message)
         elif call.data == 'online_mode':
+            await bot.delete_message(call.message.chat.id, call.message.message_id)
+            if print_time_bool(call.message.chat.id):
+                await bot.send_message(call.message.chat.id, 'Ты играешь в режиме на время!😡')
+                await game_mods(call.message)
+                return
             text = '*Поиск соперников...*'
             update_search(call.message.chat.id, 1)
             msg = await bot.send_message(call.message.chat.id, text, parse_mode='Markdown')
-            await bot.delete_message(call.message.chat.id, call.message.message_id)
             event = asyncio.Event()
             timer_task = asyncio.create_task(online_timer(call.message.chat.id, msg))  # Запускаем таймер на 10 секунд
             loop_task = asyncio.create_task(online_search(event, call.message))  # Запускаем бесконечный цикл

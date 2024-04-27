@@ -18,7 +18,8 @@ def create_table():
                         pair INTEGER,
                         suggest_stage INTEGER,
                         online_imgs TEXT,
-                        online_score INTEGER
+                        online_score INTEGER,
+                        time_score
                     )
                 ''')
 
@@ -45,15 +46,15 @@ def add_player(id, name):
                     with con:
                         cursor = con.cursor()
                         cursor.execute('''
-                            INSERT INTO players(id, name, time, score, image_id, curr_img, time_bool, pair) VALUES(?, ?, ?, ?, ?, ?, ?, ?)
-                        ''', (id, name, 0, 0, 0, None, False, 0))
+                            INSERT INTO players(id, name, time, score, image_id, curr_img, time_bool, time_score) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?)
+                        ''', (id, name, 0, 0, 0, None, False, 0, None))
                         con.commit()
                 else:
                     with con:
                         cursor = con.cursor()
                         cursor.execute('''
-                              INSERT INTO players(id, name, time, score, image_id, curr_img, time_bool, pair) VALUES(?, ?, ?, ?, ?, ?, ?, ?)
-                         ''', (id, name, 0, 0, 0, None, False, 0))
+                              INSERT INTO players(id, name, time, score, image_id, curr_img, time_bool, pair, time_score) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?)
+                         ''', (id, name, 0, 0, 0, None, False, 0, None))
                         con.commit()
 
 
@@ -214,5 +215,19 @@ def print_online_score(id):
     result = cur.execute(f"""SELECT online_score FROM players where id = {id}""").fetchall()
     return result[0][0]
 
+
+def update_time_score(id, score):
+    con = sqlite3.connect('players.db')
+    with con:
+        cursor = con.cursor()
+        cursor.execute(f"""update players set time_score = time_score + {score} where id = {id}""")
+        con.commit()
+
+
+def print_time_score(id):
+    con = sqlite3.connect("players.db")
+    cur = con.cursor()
+    result = cur.execute(f"""SELECT time_score FROM players where id = {id}""").fetchall()
+    return result[0][0]
 
 create_table()
